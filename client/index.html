@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Domotique</title>
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Domotique">
+
+    <link rel="stylesheet" href="assets/css/ratchet.css">
+    <script src="assets/js/jquery.js"></script>
+    <script src="assets/js/ratchet.js"></script>
+    <script src="assets/js/moment-with-langs.js"></script>
+    <script src="assets/js/highcharts.js"></script>
+    <script src="assets/js/mustache.js"></script>
+
+    <script src="control.js"></script>
+
+    <script type="text/html" id="page-root">
+        <header class="bar-title">
+            <h1 class="title">Domotique</h1>
+            <a class="button navigate" href="about">
+                A propos
+            </a>
+        </header>
+
+        <div class="content">
+            <div class="content-padded">
+                <p class="welcome">Liste des capteurs</p>
+            </div>
+            <ul class="list inset">
+            </ul>
+        </div>
+    </script>
+
+    <script type="text/html" id="page-foscam">
+        <header class="bar-title">
+            <a class="button-prev navigate" href="/">
+                Accueil
+            </a>
+
+            <h1 class="title">Caméra</h1>
+        </header>
+        <div class="content">
+            <div class="content-padded">
+                <p class="welcome">Liste des photos</p>
+            </div>
+            <ul class="list inset">
+            </ul>
+        </div>
+    </script>
+
+
+    <script type="text/html" id="page-temperature">
+        <header class="bar-title">
+            <a class="button-prev navigate" href="/">
+                Accueil
+            </a>
+            <h1 class="title">Température</h1>
+        </header>
+        <div class="content">
+            <div id="chart-temperature" style="width: 100%; height: 400px">
+            </div>
+            <div align="center">
+                <a class="button temp-group" data-vue="jour">Dernière 24h</a>
+                <a class="button temp-group" data-vue="semaine">Cette semaine</a>
+                <a class="button temp-group" data-vue="mois">Ce mois</a>
+                <a class="button temp-group" data-vue="annee">Cette année</a>
+            </div>
+
+        </div>
+    </script>
+
+
+    <script type="text/html" id="page-notfound">
+        Page not found
+    </script>
+
+    <script type="text/html" id="page-about">
+        <header class="bar-title">
+            <a class="button-prev navigate" href="/">
+                Accueil
+            </a>
+
+            <h1 class="title">A propos</h1>
+        </header>
+        <div class="content">
+            <div class="content-padded">
+                <p>Application cliente pour un serveur de domotique hébergé sur un Raspberry Pi.</p>
+                <p>Le serveur récupère des données via la techno 1wire et des caméras IP.</p>
+
+                <h3>API</h3>
+
+                <p>Liste des API disponibles sur le serveur :</p>
+                <ul>
+                    <li>{{SERVER}}sensors.json</li>
+                    <li>{{SERVER}}1/sensor.json</li>
+
+                    <li>{{SERVER}}1/data-last.json</li>
+                    <li>{{SERVER}}1/data-live.json</li>
+                    <li>{{SERVER}}1/datas.json</li>
+
+                    <li>{{SERVER}}1/snapshot-last.jpg</li>
+                    <li>{{SERVER}}1/snapshot-live.jpg</li>
+                    <li>{{SERVER}}1/snapshot-2013-10-28_14-15-40.jpg</li>
+                    <li>{{SERVER}}1/snapshots.json</li>
+
+                    <li>{{SERVER}}1/video-last.avi</li>
+                    <li>{{SERVER}}1/video-live.avi</li>
+                    <li>{{SERVER}}1/videos.json</li>
+                    </Li>
+                </ul>
+                <h3>Copyright</h3>
+
+                <p>Développé par Jérôme SAYNES le 28/10/2013</p>
+                <p>Licence : GPL 3</p>
+            </div>
+        </div>
+    </script>
+
+
+    <script type="text/html" id="root-temperature">
+        <li>
+            <a class="navigate" href="{{url}}">
+                <h3>{{nom}}</h3>
+
+                <p>{{val}}°C {{delta}}</p>
+                <span class="chevron"></span>
+            </a>
+        </li>
+    </script>
+
+    <script type="text/html" id="root-foscam">
+        <li>
+            <a class="navigate" href="{{url}}">
+                <h3>{{nom}}</h3>
+
+                <p>{{delta}}</p>
+                <span class="chevron"></span>
+            </a>
+        </li>
+    </script>
+
+    <script type="text/html" id="foscam-thumb">
+        <li>
+            <a class="navigate" href="{{url}}">
+                <img src="{{url}}" style="vertical-align:top;width:80px"/>
+                <span>{{date}} {{time}}</span>
+                <span class="chevron"></span>
+            </a>
+        </li>
+    </script>
+
+</head>
+<body>
+</body>
+</html>
