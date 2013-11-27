@@ -37,11 +37,9 @@
 
     <script type="text/html" id="page-foscam">
         <header class="bar-title">
-            <a class="button-prev navigate" href="/">
-                Accueil
-            </a>
-
+            <a class="button-prev navigate" href="/">Accueil</a>
             <h1 class="title">Caméra</h1>
+            <a class="button navigate" href="capteuredit/{{id}}">Edit</a>
         </header>
         <div class="content">
             <div class="content-padded">
@@ -55,13 +53,9 @@
 
     <script type="text/html" id="page-temperature">
         <header class="bar-title">
-            <a class="button-prev navigate" href="/">
-                Accueil
-            </a>
+            <a class="button-prev navigate" href="/">Accueil</a>
             <h1 class="title">Température</h1>
-            <a class="button navigate" href="capteuredit/{{id}}">
-                Edit
-            </a>
+            <a class="button navigate" href="capteuredit/{{id}}">Edit</a>
         </header>
         <div class="content">
             <div id="chart-temperature" style="width: 100%; height: 400px">
@@ -157,9 +151,7 @@
 
     <script type="text/html" id="page-snapshot">
         <header class="bar-title">
-            <a class="button-prev navigate" href="/">
-                Accueil
-            </a>
+            <a class="button-prev navigate" href="/">Accueil</a>
             <h1 class="title">Snapshot</h1>
         </header>
         <div class="content">
@@ -229,6 +221,7 @@
                     secondMax = le nombre de seconde d'enregistrement de la vidéo lorsqu'une alarme se déclenche.
                 </li>
                </ul>
+                <a class="button-block button-negative" id="capteuredit-delete">Supprimer définitvement</a>
             </div>
         </div>
     </script>

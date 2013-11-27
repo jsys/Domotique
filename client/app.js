@@ -12,7 +12,7 @@ var app = {
         app.navigate();
     },
 
-    template: function(content, tplid, data, clear) {
+    append: function(content, tplid, data, clear) {
         var tpl = $('#'+tplid).html();
         var html = Mustache.render(tpl, data);
         if (clear===true) {
@@ -27,7 +27,7 @@ var app = {
     },
 
     view: function(page, data) {
-        this.template('body', 'page-'+page, data, true);
+        this.append('body', 'page-'+page, data, true);
     },
 
     navigate: function(path) {

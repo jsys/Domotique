@@ -208,6 +208,24 @@ exports.setSensor=function(cap_id, sensor, callback) {
     }
 };
 
+exports.delSensor=function(cap_id, callback) {
+    db.run('DELETE FROM valeurs WHERE cap_id='+cap_id, function(err, res) {
+        if (err===null) {
+            db.run('DELETE FROM capteurs WHERE cap_id='+cap_id, function(err, res) {
+                if (err===null) {
+                    callback({code:200, message:'ok'});
+                } else {
+                    callback({code:400, message:'pb'});
+                }
+            });
+
+        } else {
+            callback({code:400, message:'pb'});
+        }
+    });
+};
+
+
 
 exports.addSensor=function(sensor, callback) {
     console.log(sensor);

@@ -56,9 +56,13 @@ app.get('/:id/sensor.json', function(req,res) {
         return res.send(JSON.stringify(c));
     });
 });
-
 app.post('/:id/sensor.json', function(req,res) {
     domo.setSensor(req.params.id, req.body, function(c) {
+        return res.send(JSON.stringify(c));
+    });
+});
+app.delete('/:id/sensor.json', function(req,res) {
+    domo.delSensor(req.params.id, function(c) {
         return res.send(JSON.stringify(c));
     });
 });

@@ -11,11 +11,11 @@ var control={
                 $.each(data, function(k, v) {
                     if (v.type==='temperature') {
                         v.url='temperature/'+ v.id;
-                        app.template('.content ul', 'root-temperature', v);
+                        app.append('.content ul', 'root-temperature', v);
                     }
                     if (v.type==='foscam') {
                         v.url='foscam/'+ v.id;
-                        app.template('.content ul', 'root-foscam', v);
+                        app.append('.content ul', 'root-foscam', v);
                     }
                 });
             }
@@ -29,11 +29,11 @@ var control={
 
 
     foscam: function(id) {
-        app.view('foscam', {});
-        $.getJSON(this.SERVER + id + '/snapshots.json', function(data) {
+        app.view('foscam', {id: id});
+        $.getJSON(app.SERVER + id + '/snapshots.json', function(data) {
             $.each(data, function(k, v) {
                 v.id=id;
-                app.template('.content ul', 'foscam-thumb', v);
+                app.append('.content ul', 'foscam-thumb', v);
             });
         });
     },
@@ -49,7 +49,7 @@ var control={
         app.view('capteuradd', {});
         $('#capteuradd-ajouter').click(function(e) {
             e.preventDefault();
-            $.ajax({type: 'POST', url: '/sensors.json', data: $('#capteuradd-form').serialize(), success: function(json) {
+            $.ajax({type: 'POST', url: app.SERVER + 'sensors.json', data: $('#capteuradd-form').serialize(), success: function(json) {
                 if (json.code===200) {
                     app.navigate('capteuredit/'+json.id);
                 }
@@ -63,11 +63,21 @@ var control={
             app.view('capteuredit', sensor);
             $('#capteuredit-sauve').click(function(e) {
                 e.preventDefault();
-                $.ajax({type: 'POST', url: id+'/sensor.json', data: $('#capteuredit-form').serialize(), success: function(json) {
+                $.ajax({type: 'POST', url: app.SERVER + id+'/sensor.json', data: $('#capteuredit-form').serialize(), success: function(json) {
                     if (json.code===200) {
                         app.navigate('');
                     }
                 }, dataType: 'json'});
+            });
+            $('#capteuredit-delete').click(function(e) {
+                e.preventDefault();
+                if (confirm("Etes vous sur de vouloir supprimer ce capteur ?")) {
+                    $.ajax({type: 'DELETE', url: app.SERVER + id+'/sensor.json', data: $('#capteuredit-form').serialize(), success: function(json) {
+                        if (json.code===200) {
+                            app.navigate('');
+                        }
+                    }, dataType: 'json'});
+                }
             });
         });
     },
