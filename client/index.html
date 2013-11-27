@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="utf-8">
     <title>Domotique</title>
@@ -15,13 +15,14 @@
     <script src="assets/js/highcharts.js"></script>
     <script src="assets/js/mustache.js"></script>
 
-    <script src="control.js"></script>
-
     <script type="text/html" id="page-root">
         <header class="bar-title">
-            <h1 class="title">Domotique</h1>
             <a class="button navigate" href="about">
                 A propos
+            </a>
+            <h1 class="title">Domotique</h1>
+            <a class="button navigate" href="capteuradd">
+                Ajouter
             </a>
         </header>
 
@@ -58,6 +59,9 @@
                 Accueil
             </a>
             <h1 class="title">Température</h1>
+            <a class="button navigate" href="capteuredit/{{id}}">
+                Edit
+            </a>
         </header>
         <div class="content">
             <div id="chart-temperature" style="width: 100%; height: 400px">
@@ -135,7 +139,6 @@
         <li>
             <a class="navigate" href="{{url}}">
                 <h3>{{nom}}</h3>
-
                 <p>{{delta}}</p>
                 <span class="chevron"></span>
             </a>
@@ -144,7 +147,7 @@
 
     <script type="text/html" id="foscam-thumb">
         <li>
-            <a class="navigate" href="{{url}}">
+            <a class="navigate" href="snapshot/{{id}}/{{date}}_{{time}}">
                 <img src="{{url}}" style="vertical-align:top;width:80px"/>
                 <span>{{date}} {{time}}</span>
                 <span class="chevron"></span>
@@ -152,7 +155,97 @@
         </li>
     </script>
 
+    <script type="text/html" id="page-snapshot">
+        <header class="bar-title">
+            <a class="button-prev navigate" href="/">
+                Accueil
+            </a>
+            <h1 class="title">Snapshot</h1>
+        </header>
+        <div class="content">
+            blablabla
+        </div>
+    </script>
+
+
+    <script type="text/html" id="page-capteuradd">
+        <header class="bar-title">
+            <a class="button-prev navigate" href="/">
+                Accueil
+            </a>
+            <h1 class="title">Ajouter capteur</h1>
+        </header>
+        <div class="content">
+            <div class="content-padded">
+                <form id="capteuradd-form">
+                    <label>Nom libre :</label>
+                    <input type="text" placeholder="Nom libre à remplir" name="nom">
+                    <label>Techno :</label>
+                    <select name="techno">
+                        <option value="1wire">1-Wire</option>
+                        <option value="CM">Caméra IP</option>
+                        <option value="CM">Carte mère</option>
+                    </select>
+                    <a class="button button-block" id="capteuradd-ajouter">Ajouter</a>
+                </form>
+            </div>
+        </div>
+    </script>
+
+
+    <script type="text/html" id="page-capteuredit">
+        <header class="bar-title">
+            <a class="button-prev navigate" href="/">
+                Accueil
+            </a>
+            <h1 class="title">Edition</h1>
+        </header>
+        <div class="content">
+            <div class="content-padded">
+                <form id="capteuredit-form">
+                    <input type="hidden" name="id" value="{{id}}">
+                    <label>Nom libre :</label>
+                    <input type="text" placeholder="Nom" name="nom" value="{{nom}}">
+                    <label>Techno (1wire|CM|cameraip) :</label>
+                    <input type="text" placeholder="Techno" name="techno" value="{{techno}}">
+                    <label>Type (temperature|foscam) :</label>
+                    <input type="text" placeholder="Type" name="type" value="{{type}}">
+                    <label>Datas au format json :</label>
+                    <textarea rows="5" placeholder="Data" name="data">{{data}}</textarea>
+                    <a class="button button-block" id="capteuredit-sauve">Sauver</a>
+                </form>
+                <ul class="list">
+                <li>
+                    Si techno=<b>1wire</b> et type=<b>temperature</b> alors data soit contenir l'ID du capteur de température DS18B20.<br />
+                    Par exemple data=<b>{"mac":"28.2C3135050000"}</b>
+                </li>
+                <li>
+                    Si techno=<b>CM</b> alors type=<b>temperature</b>.<br />
+                    Cela relève la température du Raspberri PI. Le champ data doit être vide.
+                </li>
+                <li>
+                    Si techno=<b>cameraip</b> et type=<b>foscam</b> alors data doit contenir les infos de config de la caméra IP.<br />
+                    Par exemple data=<b>{"host":"192.168.1.113","user":"admin","password":"admin","secondMax":60}</b><br />
+                    secondMax = le nombre de seconde d'enregistrement de la vidéo lorsqu'une alarme se déclenche.
+                </li>
+               </ul>
+            </div>
+        </div>
+    </script>
+
+
 </head>
 <body>
+
+<script src="control.js"></script>
+<script src="app.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+    // Indiquez l'IP du serveur s'il ne tourne pas sur la même IP que le client
+    app.init('AUTOIP', control);
+});
+</script>
+
 </body>
 </html>

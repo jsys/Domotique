@@ -13,7 +13,7 @@ moment.lang('fr');
 exports.log = function (txt) {
     //console.log(txt);
     fs.appendFile(__dirname + '/domotique.log', exports.dateSqlFormat(new Date()) + ' ' + txt + "\n");
-}
+};
 
 
 exports.temperature1wire=function(uid, callback) {
@@ -28,12 +28,12 @@ exports.temperature1wire=function(uid, callback) {
     } else {
         callback(false,false);
     }  
-}
+};
 
 
 exports.temperatureCM=function(callback) {
     var time = Date.now();
-    var child = exec("/opt/vc/bin/vcgencmd measure_temp", function (error, stdout, stderr) {
+    exec("/opt/vc/bin/vcgencmd measure_temp", function (error, stdout) {
         if (error == null) {
             var e=stdout.split('=');
             e=e[1].split("'");
@@ -50,7 +50,7 @@ exports.temperatureCM=function(callback) {
 Sauve une donnée dans la BDD
 */
 exports.setData=function(time,cap_id,val, callback) {
-    db.get("INSERT INTO valeurs VALUES ('"+time+"', '"+cap_id+"', '"+val+"')",function(result){
+    db.get("INSERT INTO valeurs VALUES ('"+time+"', '"+cap_id+"', '"+val+"')",function(){
         exports.log(JSON.stringify({time:time,cap_id:cap_id,val:val}));
         if (typeof callback==='function') {
             callback(time,cap_id,val);
@@ -75,14 +75,14 @@ exports.getData=function(cap_id, cache, callback) {
                         exports.temperature1wire(data.mac, function(time,temp) {
                             callback(time,temp);  
                         });
-                    };
+                    }
                 } else if (row.type==='temperature'&&row.techno==='CM') {
                     exports.temperatureCM(function(time,temp) {
                         callback(time,temp);  
                     });
-                };
+                }
             }
-        };
+        }
     });
 };
 
@@ -93,7 +93,7 @@ exports.getSetData=function(cap_id,callback) {
     exports.getData(cap_id, false, function(time,val) {
         if (time!==false) {
             exports.setData(time,cap_id,val,callback);
-        };
+        }
     });
 };
 
@@ -105,7 +105,7 @@ exports.getSetSensors=function(callbackeach) {
     db.each("SELECT * FROM capteurs", function(error, row){
         if (error == null) {
             exports.getSetData(row.cap_id, callbackeach);
-        };
+        }
     });
 };
 
@@ -145,6 +145,7 @@ exports.datas=function(cap_id, params, callback) {
 
     db.each(q,
     function(err,row) {
+        row.sqldate=exports.dateSqlFormat(new Date(row.time));
       res.push(row);
     }, 
     function(err,rows) {
@@ -157,13 +158,27 @@ exports.sensors=function(callback) {
     var capteurs=[];
     db.each("SELECT cap_id AS id,nom,techno,type,data,(SELECT time FROM valeurs V WHERE V.cap_id=C.cap_id ORDER BY time DESC LIMIT 1) AS time,(SELECT val FROM valeurs V WHERE V.cap_id=C.cap_id ORDER BY time DESC LIMIT 1) AS val FROM capteurs C", function(err,row) {
         row.delta=moment(row.time).fromNow();
-        //if (row.type==='temperature') row.typeTemperature=true;
-        //if (row.type==='foscam') row.typeFoscam=true;
         capteurs.push(row);
     }, function(err, rows) {
-        callback(capteurs);
+        if(err===null) {
+            callback(capteurs);
+        } else {
+            db.run('CREATE TABLE capteurs (cap_id BIGINT, nom TEXT, techno, type, data)', function(err, res) {
+                if (err===null) {
+                    db.run('CREATE TABLE valeurs (time bigint primary key, cap_id int, val TEXT)', function(err, res) {
+                        if (err===null) {
+                            callback('installok');
+                        } else {
+                            callback('installerr');
+                        }
+                    });
+                } else {
+                    callback('installerr');
+                }
+            });
+        }
     });
-}
+};
 
 
 exports.sensor=function(cap_id, callback) {
@@ -171,10 +186,48 @@ exports.sensor=function(cap_id, callback) {
         row.delta=moment(row.time).fromNow();
         callback(row);
     }, function(err, rows) {
-
+        callback();
     });
-}
+};
 
+
+exports.setSensor=function(cap_id, sensor, callback) {
+    //{"nom":"Temperature tube","techno":"1wire","type":"temperature","data":"{\"mac\":\"28.2C3135050000\"}"};
+    if (sensor.nom && sensor.techno) {
+        var stmt = db.prepare('UPDATE capteurs SET nom=?,techno=?,type=?,data=? WHERE cap_id=?');
+        stmt.bind(sensor.nom, sensor.techno, sensor.type, sensor.data, cap_id);
+        stmt.run(function(err, res) {
+            if (err===null) {
+                callback({code:200, message:'ok'});
+            } else {
+                callback({code:400, message:'pb'});
+            }
+        });
+    } else {
+        callback({code:400, message:'pb'});
+    }
+};
+
+
+exports.addSensor=function(sensor, callback) {
+    console.log(sensor);
+    if (sensor.nom && sensor.techno) {
+        var stmt = db.prepare('INSERT INTO capteurs (cap_id,nom,techno) VALUES((SELECT CASE WHEN MAX(cap_id) IS NULL THEN 0 ELSE (MAX(cap_id) + 1) END FROM capteurs),?,?)');
+        stmt.bind(sensor.nom, sensor.techno);
+        stmt.run(function(err, res) {
+            console.log(err,res);
+            if (err===null) {
+                db.each("SELECT MAX(cap_id) AS id FROM capteurs", function(err,row) {
+                    callback({code:200, id:row.id, message:'ok'});
+                });
+            } else {
+                callback({code:401, message:'pb'});
+            }
+        });
+    } else {
+        callback({code:400, message:'champ vide'});
+    }
+};
 
 
 exports.dateFileFormat=function(d) {
@@ -185,7 +238,7 @@ exports.dateFileFormat=function(d) {
       + pad(d.getUTCHours())+'-'
       + pad(d.getUTCMinutes())+'-'
       + pad(d.getUTCSeconds());
-}
+};
 
 exports.dateSqlFormat=function(d) {
   function pad(n){return n<10 ? '0'+n : n}
@@ -195,7 +248,7 @@ exports.dateSqlFormat=function(d) {
       + pad(d.getUTCHours())+':'
       + pad(d.getUTCMinutes())+':'
       + pad(d.getUTCSeconds());
-}
+};
 
 exports.dateStrFormat=function(d) {
   function pad(n){return n<10 ? '0'+n : n}
@@ -205,7 +258,7 @@ exports.dateStrFormat=function(d) {
       + pad(d.getUTCHours())+'-'
       + pad(d.getUTCMinutes())+'-'
       + pad(d.getUTCSeconds());
-}
+};
 
 /*
 domo.saveCameraIP('video.avi', '192.168.1.113','admin','password', 2, function(size,second) {
@@ -227,7 +280,7 @@ exports.saveCameraIP=function(fileOut, host, user, pass, maxSecond, callback, ca
             }
             if (date == null) {
                 date = new Date();
-            };
+            }
             second = (new Date()-date)/1000;
             if (second > maxSecond) {
                 req.abort();
@@ -263,8 +316,8 @@ exports.snapshots=function(cap_id, callback) {
     var res=[],
         p=path.join(__dirname, 'data','capteur', cap_id);
     fs.readdir(p,function(error,fic) {
-        var f,e;
-        for( var i in fic){
+        var f;
+        for(var i in fic){
             f=fic[i];
             if (f.substr(0,8)==="snapshot") {
                 res.push({url: cap_id + '/snapshot-' + f.substr(9,19) + '.jpg', date: f.substr(9,10), time: f.substr(20,8).replace('-',':')});
@@ -272,7 +325,7 @@ exports.snapshots=function(cap_id, callback) {
         }
         callback(res);
     });
-}
+};
 
 /*
 Renvoi le fichier du snapshot

@@ -1,98 +1,82 @@
-var app={
-    SERVER: 'AUTO',
-    template: function(content, tplid, data, clear) {
-        var tpl = $('#'+tplid).html();
-        var html = $.mustache(tpl, data);
-        if (clear===true) {
-            $(content).html('');
-        }
-        $(content).append(html);
-        $(content + ' a.navigate').off('click');
-        $(content + ' a.navigate').on('click', function(e) {
-            app.navigate($(this).attr('href'));
-            e.preventDefault();
-        });
-    },
-    /*
-    foscam/3
-    /
-    ...
-     */
-    navigate: function(path) {
-        var p;
-        if (typeof path === 'undefined') {
-            p=window.location.hash;
-        } else {
-            p=path;
-        }
-        p= p.split('/');
-        if (p[0]==='#') {
-            p.shift();
-        }
-        //console.log(p);
-
-        if (p[0] !=="") {
-            // Si un controleur existe on appelle le controleur
-            var ctrl= p[0] + 'Ctrl';
-            if (typeof app[ctrl]==='function') {
-                app[ctrl](p[1],p[2]);
+var control={
+    root: function() {
+        app.view('root', {});
+        // Chargement de la liste des capteurs
+        $.getJSON(app.SERVER+'sensors.json', function(data) {
+            if (data==='installok') {
+                $('.content').append('Installation de la base de donnée réussi. Vous pouvez ajouter vos capteurs.');
+            } else if (data==='installerr') {
+                    $('.content').append("Erreur : impossible d'installer la base de donnée. Supprimez le fichier domotique.db pour rééssayer.");
             } else {
-                if ($('#page-'+p[0]).length>0) {
-                    app.template('body', 'page-'+p[0], {}, true);
-                } else {
-                    app.template('body', 'page-notfound', {}, true);
-                }
+                $.each(data, function(k, v) {
+                    if (v.type==='temperature') {
+                        v.url='temperature/'+ v.id;
+                        app.template('.content ul', 'root-temperature', v);
+                    }
+                    if (v.type==='foscam') {
+                        v.url='foscam/'+ v.id;
+                        app.template('.content ul', 'root-foscam', v);
+                    }
+                });
             }
-            if (typeof path!=='undefined' && window.location.protocol !== 'file:') {
-                history.replaceState(null,null, '/#/'+path);
-            }
-        } else {
-            app.rootCtrl();
-            if (window.location.protocol !== 'file:') {
-                history.replaceState(null,null, '/');
-            }
-        }
+
+        }).fail(function(err) {
+                console.log(err);
+                $('.content').append('Erreur réseau. Impossible de récupérer la liste des capteurs depuis le serveur.<br /><br />Chargez cette page depuis le serveur en tapant <strong>http://a.b.c.d</strong> ou a.b.c.d est l\'adresse du serveur.<br />Par exemple <a href="http://127.0.0.1">http://127.0.0.1</a> si le serveur tourne sur cet ordinateur.');
+            });
+
     },
 
-    foscamCtrl: function(id) {
-        // *** Page Foscam ***
-        app.template('body', 'page-foscam', {}, true);
 
+    foscam: function(id) {
+        app.view('foscam', {});
         $.getJSON(this.SERVER + id + '/snapshots.json', function(data) {
             $.each(data, function(k, v) {
+                v.id=id;
                 app.template('.content ul', 'foscam-thumb', v);
             });
         });
     },
 
-    rootCtrl: function() {
-        // *** Page principale ***
-        app.template('body', 'page-root', {}, true);
 
-        // Chargement de la liste des capteurs
-        $.getJSON(app.SERVER+'sensors.json', function(data) {
-            $.each(data, function(k, v) {
-                if (v.type==='temperature') {
-                    v.url='temperature/'+ v.id;
-                    app.template('.content ul', 'root-temperature', v);
-                }
-                if (v.type==='foscam') {
-                    v.url='foscam/'+ v.id;
-                    app.template('.content ul', 'root-foscam', v);
-                }
-            });
-        }).fail(function(err) {
-            console.log(err);
-                $('.content').append('Erreur réseau. Impossible de récupérer la liste des capteurs depuis le serveur.<br /><br />Chargez cette page depuis le serveur en tapant <strong>http://a.b.c.d</strong> ou a.b.c.d est l\'adresse du serveur.<br />Par exemple <a href="http://127.0.0.1">http://127.0.0.1</a> si le serveur tourne sur cet ordinateur.');
-        });
-
+    snapshot: function(id, date) {
+        app.view('snapshot', {id:id, date:date});
+        console.log(id, date);
     },
 
-    temperatureCtrl: function(id) {
-        // *** Page Foscam ***
+
+    capteuradd: function() {
+        app.view('capteuradd', {});
+        $('#capteuradd-ajouter').click(function(e) {
+            e.preventDefault();
+            $.ajax({type: 'POST', url: '/sensors.json', data: $('#capteuradd-form').serialize(), success: function(json) {
+                if (json.code===200) {
+                    app.navigate('capteuredit/'+json.id);
+                }
+            }, dataType: 'json'});
+        });
+    },
+
+
+    capteuredit: function(id) {
+        $.getJSON(id+'/sensor.json', function (sensor) {
+            app.view('capteuredit', sensor);
+            $('#capteuredit-sauve').click(function(e) {
+                e.preventDefault();
+                $.ajax({type: 'POST', url: id+'/sensor.json', data: $('#capteuredit-form').serialize(), success: function(json) {
+                    if (json.code===200) {
+                        app.navigate('');
+                    }
+                }, dataType: 'json'});
+            });
+        });
+    },
+
+
+    temperature: function(id) {
         $.getJSON(id+'/sensor.json', function (sensor) {
 
-            app.template('body', 'page-temperature', sensor, true);
+            app.view('temperature', sensor);
 
             chart = new Highcharts.Chart({
                 chart: {
@@ -192,21 +176,8 @@ var app={
     },
 
 
-    aboutCtrl: function() {
-        app.template('body','page-about', {SERVER: app.SERVER}, true);
+    about: function() {
+        app.view('about', {SERVER: app.SERVER});
     }
 
 };
-
-
-$(document).ready(function() {
-    $.mustache = function (template, view, partials) {
-        return Mustache.render(template, view, partials);
-    };
-
-    if (app.SERVER==='AUTO') {
-        app.SERVER=window.location.origin+'/';
-    }
-
-    app.navigate();
-});

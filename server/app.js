@@ -57,10 +57,22 @@ app.get('/:id/sensor.json', function(req,res) {
     });
 });
 
+app.post('/:id/sensor.json', function(req,res) {
+    domo.setSensor(req.params.id, req.body, function(c) {
+        return res.send(JSON.stringify(c));
+    });
+});
+
+
 app.get('/sensors.json', function(req,res) {
     domo.sensors(function(c) {
         return res.send(JSON.stringify(c));
     });    
+});
+app.post('/sensors.json', function(req,res) {
+    domo.addSensor(req.body, function(c) {
+        return res.send(JSON.stringify(c));
+    });
 });
 
 
@@ -75,21 +87,21 @@ app.get('/sql.html', function(req,res) {
         if (typeof rows==="string") {
             return res.send(rows);
         }
-        var i, j, html, head=false;
+        var i, html, head=false;
         html=req.query.q+'<table border=1 cellspacing=0>';
         rows.forEach(function(row) {
             if (!head) {
                 html=html+'<thead><tr>';
                 for(i in row) {
                     html=html+'<td>'+i+'</td>';
-                };
+                }
                 html=html+'</tr></thead>';
                 head=true;
             }
             html=html+'<tr>';
             for(i in row) {
                 html=html+'<td>'+row[i]+'</td>';
-            };
+            }
             html=html+'</tr>';
         });
         html=html+'</table>'+rows.length+' lignes';
@@ -126,7 +138,7 @@ app.get('/camera-snapshot/:id.jpg', function(req, res) {
         fs.readFile(__dirname + '/public/snapshot.jpg', function (err, data) {
             if (err) {
                 throw err;
-            };
+            }
             res.writeHead(200, {'Content-Type': 'image/jpeg'});
             res.end(data); 
         });
@@ -144,6 +156,14 @@ app.get('/:id/snapshot-:date.jpg', function(req, res) {
                 res.end(data);
             });
         }
+    });
+});
+
+
+// http://192.168.1.112/1/snapshot-2013-10-28_14-15-40.json
+app.get('/:id/snapshot-:date.json', function(req, res) {
+    domo.snapshotDate(req.params.id, req.params.date, function(json) {
+        return res.send(JSON.stringify(json));
     });
 });
 
