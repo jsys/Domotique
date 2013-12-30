@@ -4,6 +4,7 @@ var sqlite3 = require('sqlite3');
 var exec = require('child_process').exec;
 var http = require('http');
 var path = require('path');
+var cam = require(__dirname + '/foscam.js');
 
 var db = new sqlite3.Database(path.join(__dirname, 'domotique.db'));
 
@@ -11,8 +12,13 @@ var moment = require('moment');
 moment.lang('fr');
 
 exports.log = function (txt) {
-    //console.log(txt);
+    console.log(txt);
     fs.appendFile(__dirname + '/domotique.log', exports.dateSqlFormat(new Date()) + ' ' + txt + "\n");
+};
+
+
+exports.pathData=function(cap_id, fic) {
+    return path.join(__dirname, 'data','capteur', cap_id+'', fic);
 };
 
 
@@ -156,7 +162,7 @@ exports.datas=function(cap_id, params, callback) {
 
 exports.sensors=function(callback) {
     var capteurs=[];
-    db.each("SELECT cap_id AS id,nom,techno,type,data,(SELECT time FROM valeurs V WHERE V.cap_id=C.cap_id ORDER BY time DESC LIMIT 1) AS time,(SELECT val FROM valeurs V WHERE V.cap_id=C.cap_id ORDER BY time DESC LIMIT 1) AS val FROM capteurs C", function(err,row) {
+    db.each("SELECT cap_id AS id,nom,techno,type,data,(SELECT time FROM valeurs V WHERE V.cap_id=C.cap_id ORDER BY time DESC LIMIT 1) AS time,(SELECT val FROM valeurs V WHERE V.cap_id=C.cap_id ORDER BY time DESC LIMIT 1) AS val FROM capteurs C ORDER BY C.nom", function(err,row) {
         row.delta=moment(row.time).fromNow();
         capteurs.push(row);
     }, function(err, rows) {
@@ -289,7 +295,7 @@ exports.saveCameraIP=function(fileOut, host, user, pass, maxSecond, callback, ca
     var file = fs.createWriteStream(fileOut);
     var date = null;
     var buffer, second;
-    var req = http.get({host: host, port: 80, path: '/video.cgi?user='+user+'&pwd='+pass}, function(res) {
+    var req = http.get({host: host, port: 80, path: '/videostream.cgi?user='+user+'&pwd='+pass}, function(res) {
         res.setEncoding('binary');
         res.on('data', function(chunk) {
             buffer = file.write(chunk);
@@ -308,6 +314,7 @@ exports.saveCameraIP=function(fileOut, host, user, pass, maxSecond, callback, ca
             } 
         });
         res.on('end', function() {
+            file.close();
             if (res.statusCode!==200) {
                 if (typeof callbackError==='function') {
                     callbackError('Status Code: ' + res.statusCode);
@@ -327,6 +334,43 @@ exports.saveCameraIP=function(fileOut, host, user, pass, maxSecond, callback, ca
 };
 
 
+exports.cameraAlarm=function(cap_id, callback) {
+    db.each("SELECT data FROM capteurs WHERE cap_id="+cap_id, function(err,row) {
+        var data=JSON.parse(row.data);
+        if (typeof data.host!=='undefined') {
+            cam.setup({
+                host: data.host,
+                port: data.port||80,
+                user: data.user,
+                pass: data.password
+            });
+            var fdate = exports.dateFileFormat(new Date()),
+                fjpg=exports.pathData(cap_id, 'snapshot_' + fdate + '.jpg');
+            cam.snapshot(fjpg, function(fic) {
+                var favi=exports.pathData(cap_id, 'video_' + fdate + '.avi');
+                exports.saveCameraIP(favi, data.host, data.user, data.password, 10, function(size, second) {
+                    exports.setData(Date.now(), cap_id, 2, function() {
+                        exports.log('recording ' + size + ' bytes in ' + second + ' seconds');
+                        callback({code:200, msg:'recording ' + size + ' bytes in ' + second + ' seconds', fjpg: fjpg, favi:favi});
+                    })
+
+                }, function (error) {
+                    exports.setData(Date.now(), cap_id, 1, function() {
+                        exports.log(error);
+                        callback({code:406, msg:error});
+                    });
+                });
+
+            });
+
+        } else {
+            callback({code:405, msg:"host non defini", data:data});
+        }
+    });
+
+};
+
+
 /*
 Renvoi la liste des snapshot du capteur
  */
@@ -338,7 +382,7 @@ exports.snapshots=function(cap_id, callback) {
         for(var i in fic){
             f=fic[i];
             if (f.substr(0,8)==="snapshot") {
-                res.push({url: cap_id + '/snapshot-' + f.substr(9,19) + '.jpg', date: f.substr(9,10), time: f.substr(20,8).replace('-',':')});
+                res.push({id:cap_id, url: cap_id + '/snapshot-' + f.substr(9,19) + '.jpg', path: f.substr(9,19),  date: f.substr(9,10), time: f.substr(20,8).replace('-',':').replace('-',':')});
             }
         }
         callback(res);
@@ -349,11 +393,13 @@ exports.snapshots=function(cap_id, callback) {
 Renvoi le fichier du snapshot
  */
 exports.snapshotDate=function(cap_id, date, callback) {
-    var p=path.join(__dirname, 'data','capteur', cap_id);
-        fic=path.join(p, 'snapshot_' + date + '.jpg');
-    if (fs.exists(fic, function(ok) {
+    var f='snapshot_' + date + '.jpg';
+    if (fs.exists(exports.pathData(cap_id, f), function(ok) {
         if (ok) {
-            callback(fic);
+            callback({id:cap_id, fic: exports.pathData(cap_id, f), url: cap_id + '/snapshot-' + f.substr(9,19) + '.jpg', date: f.substr(9,10), time: f.substr(20,8).replace('-',':').replace('-',':')});
+        } else {
+            console.log('Not found : ' + fic);
+            callback(false);
         }
     }));
 };
@@ -370,7 +416,7 @@ exports.sql=function(q, callback) {
         if (err == null) {
             callback(res);
         } else {
-            callback("ERREUR");
+            callback("ERREUR " + err);
         }
     });
 

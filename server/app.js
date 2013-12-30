@@ -7,19 +7,9 @@ var http = require('http');
 var path = require('path');
 var fs = require('fs');
 var sys = require('sys');
-var cam = require(__dirname + '/foscam.js');
-
 var app = express();
 
-
 var domo = require(__dirname + '/domotique.js');
-
-cam.setup({
-    host: '192.168.1.113',
-    port: 80,
-    user: 'admin',
-    pass: '6s2ucamera'
-});
 
 
 app.set('port', process.env.PORT || 80);
@@ -33,23 +23,26 @@ app.use(app.router);
 
 app.use(express.static(path.join(__dirname, '..', 'client')));
 
-app.get('/valeur-last/:id.json', function (req, res) {
+app.get('/:id/data-last.json', function (req, res) {
     domo.getData(req.params.id, true, function (time, val) {
         return res.send(JSON.stringify({time: time, val: val}));
-    });    
+    });
 });
 
 app.get('/:id/datas.json', function (req, res) {
     domo.datas(req.params.id, req.query, function(valeurs) {
         return res.send(JSON.stringify(valeurs));
-    });    
+    });
 });
 
-app.get('/valeur-live/:id.json', function (req, res) {
+app.get('/:id/data-live.json', function (req, res) {
     domo.getData(req.params.id, false, function (time, val) {
         return res.send(JSON.stringify({time: time, val: val}));
     });
 });
+
+
+
 
 app.get('/:id/sensor.json', function(req,res) {
     domo.sensor(req.params.id, function(c) {
@@ -68,10 +61,12 @@ app.delete('/:id/sensor.json', function(req,res) {
 });
 
 
+
+
 app.get('/sensors.json', function(req,res) {
     domo.sensors(function(c) {
         return res.send(JSON.stringify(c));
-    });    
+    });
 });
 app.post('/sensors.json', function(req,res) {
     domo.addSensor(req.body, function(c) {
@@ -114,19 +109,12 @@ app.get('/sql.html', function(req,res) {
 });
 
 
-app.get('/camera-alarm.json', function (req, res) {
+app.get('/:id/camera-alarm.json', function (req, res) {
     domo.log('Camera Alarm');
     var fdate = domo.dateFileFormat(new Date());
-    cam.snapshot(__dirname + '/public/snapshot_' + fdate + '.jpg', function() {
-        res.send('OK');
+    domo.cameraAlarm(req.params.id, function(json) {
+        return res.send(JSON.stringify(json));
     });
-
-    domo.saveCameraIP(__dirname + '/public/video_' + fdate + '.avi', '192.168.1.113','admin','6s2ucamera', 10, function(size,second) {
-        domo.log('recording ' + size + ' bytes in ' + second + ' seconds');
-    }, function (error) {
-        domo.log(error);
-    });
-
 });
 
 
@@ -144,7 +132,7 @@ app.get('/camera-snapshot/:id.jpg', function(req, res) {
                 throw err;
             }
             res.writeHead(200, {'Content-Type': 'image/jpeg'});
-            res.end(data); 
+            res.end(data);
         });
 
     });
@@ -153,12 +141,14 @@ app.get('/camera-snapshot/:id.jpg', function(req, res) {
 
 // http://192.168.1.112/1/snapshot-2013-10-28_14-15-40.jpg
 app.get('/:id/snapshot-:date.jpg', function(req, res) {
-    domo.snapshotDate(req.params.id, req.params.date, function(fic) {
-        if (fic) {
-            fs.readFile(fic, function (err, data) {
+    domo.snapshotDate(req.params.id, req.params.date, function(json) {
+        if (json) {
+            fs.readFile(json.fic, function (err, data) {
                 res.writeHead(200, {'Content-Type': 'image/jpeg'});
                 res.end(data);
             });
+        } else {
+            res.send();
         }
     });
 });
@@ -173,7 +163,10 @@ app.get('/:id/snapshot-:date.json', function(req, res) {
 
 
 http.createServer(app).listen(app.get('port'), function(){
-  var txt='*** Domotique server start on port ' + app.get('port');
-  console.log(txt);
-  domo.log(txt);
+    var txt='*** Domotique server start on port ' + app.get('port');
+    domo.log(txt);
+/*    domo.cameraAlarm(3, function(r) {
+        console.log(r);
+    });
+*/
 });

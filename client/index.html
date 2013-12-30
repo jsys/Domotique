@@ -20,7 +20,7 @@
             <a class="button navigate" href="about">
                 A propos
             </a>
-            <h1 class="title">Domotique</h1>
+            <h1 class="title">Domotique V1.6</h1>
             <a class="button navigate" href="capteuradd">
                 Ajouter
             </a>
@@ -28,7 +28,7 @@
 
         <div class="content">
             <div class="content-padded">
-                <p class="welcome">Liste des capteurs</p>
+                <!--<p class="welcome">Liste des capteurs</p>-->
             </div>
             <ul class="list inset">
             </ul>
@@ -58,13 +58,14 @@
             <a class="button navigate" href="capteuredit/{{id}}">Edit</a>
         </header>
         <div class="content">
-            <div id="chart-temperature" style="width: 100%; height: 400px">
+            <div id="chart-temperature" style="width: 100%; height: 480px">
             </div>
             <div align="center">
-                <a class="button temp-group" data-vue="jour">Dernière 24h</a>
-                <a class="button temp-group" data-vue="semaine">Cette semaine</a>
-                <a class="button temp-group" data-vue="mois">Ce mois</a>
-                <a class="button temp-group" data-vue="annee">Cette année</a>
+                <a class="button temp-group" data-vue="jour">24h</a>
+                <a class="button temp-group" data-vue="semaine">Semaine</a>
+                <a class="button temp-group" data-vue="mois">Mois</a>
+                <a class="button temp-group" data-vue="annee">Année</a>
+                <a class="button temp-logs">Logs</a>
             </div>
 
         </div>
@@ -141,7 +142,7 @@
 
     <script type="text/html" id="foscam-thumb">
         <li>
-            <a class="navigate" href="snapshot/{{id}}/{{date}}_{{time}}">
+            <a class="navigate" href="foscamdetail/{{id}}/{{path}}">
                 <img src="{{url}}" style="vertical-align:top;width:80px"/>
                 <span>{{date}} {{time}}</span>
                 <span class="chevron"></span>
@@ -149,13 +150,13 @@
         </li>
     </script>
 
-    <script type="text/html" id="page-snapshot">
+    <script type="text/html" id="page-foscamdetail">
         <header class="bar-title">
-            <a class="button-prev navigate" href="/">Accueil</a>
+            <a class="button-prev navigate" href="foscam/{{id}}">Liste</a>
             <h1 class="title">Snapshot</h1>
         </header>
         <div class="content">
-            blablabla
+            <img src="{{url}}" style="width:640px"/>
         </div>
     </script>
 

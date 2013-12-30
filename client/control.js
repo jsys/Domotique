@@ -39,8 +39,10 @@ var control={
     },
 
 
-    snapshot: function(id, date) {
-        app.view('snapshot', {id:id, date:date});
+    foscamdetail: function(id, date) {
+        $.getJSON(app.SERVER + id + '/snapshot-'+date+'.json', function(json) {
+            app.view('foscamdetail', json);
+        });
         console.log(id, date);
     },
 
@@ -152,13 +154,13 @@ var control={
                     chart.series[0].remove(true);
                 }
 
-                var d=new Date()* 1,
+                var d=new Date()* 1 + 3600*1000,
                     j = 1000*3600*24;
 
                 if (vue==="jour") {
                     chart.xAxis[0].options.tickInterval = 3600*1000; // 1 heure
                     addSerie(d-j*1, d, '', 0);
-                    addSerie(d-j*12, d, '', j*1);
+                    addSerie(d-j*1, d, '', j*1);
                 } else if (vue==="semaine") {
                     chart.xAxis[0].options.tickInterval = j; // 1 jour
                     addSerie(d-j*7, d, 'hour', 0);
@@ -180,6 +182,10 @@ var control={
                 graphVue(vue);
                 e.preventDefault();
             });
+            $('.temp-logs').on('click', function(e) {
+                window.location.href=href="/sql.html?q=SELECT%20datetime(time/1000,'unixepoch')%20AS%20date,val%20FROM%20valeurs%20WHERE%20cap_id="+id+"%20ORDER%20BY%20time%20DESC%20LIMIT%20100";
+                e.preventDefault();
+            })
 
 
         });

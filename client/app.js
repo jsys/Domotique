@@ -27,6 +27,7 @@ var app = {
     },
 
     view: function(page, data) {
+        data.SERVER=this.SERVER;
         this.append('body', 'page-'+page, data, true);
     },
 
@@ -54,12 +55,12 @@ var app = {
                 }
             }
             if (typeof path!=='undefined' && window.location.protocol !== 'file:') {
-                history.replaceState(null,null, '/#/'+path);
+                history.pushState(null, '', '/#/'+path);
             }
         } else {
             this.ctrl.root();
             if (window.location.protocol !== 'file:') {
-                history.replaceState(null,null, '/');
+                history.pushState(null, '', '/');
             }
         }
     }

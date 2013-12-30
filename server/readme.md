@@ -4,6 +4,7 @@ le serveur propose une API et stocke l'historique des données.
 
 ## Quelles sont les API ?
 
+- http://IPSERVEUR/sensors.json
 - http://IPSERVEUR/1/sensor.json
 - http://IPSERVEUR/1/data-last.json
 - http://IPSERVEUR/1/data-live.json
@@ -15,3 +16,11 @@ le serveur propose une API et stocke l'historique des données.
 - http://IPSERVEUR/1/video-last.avi
 - http://IPSERVEUR/1/video-live.avi
 - http://IPSERVEUR/1/videos.json
+
+## Comment débugger ?
+
+Il est possible de faire des requetes sur les tables et d'afficher le résultat :
+
+    http://IPSERVEUR/sql.html?q=SELECT%20*%20FROM%20capteurs
+
+    http://IPSERVEUR/sql.html?q=SELECT%20*%20FROM%20valeurs
